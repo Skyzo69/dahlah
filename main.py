@@ -66,6 +66,6 @@ async def main(channel_id):
 
 if __name__ == "__main__":
     # Ganti YOUR_CHANNEL_ID_HERE dengan ID channel Discord tempat quest berada
-    CHANNEL_ID = "YOUR_CHANNEL_ID_HERE"
+    CHANNEL_ID = "1324498333758390353"
 
     asyncio.run(main(CHANNEL_ID))
