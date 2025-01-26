@@ -23,14 +23,18 @@ def load_tokens():
 
 class QuestClaimer(discord.Client):
     def __init__(self, token, *args, **kwargs):
-        # Set intents dan bot=False
-        intents = discord.Intents.default()
-        intents.message_content = True
+        # Inisialisasi set untuk tracking user
+        self.claimed_users = set()
+        
+        # Setup intents manual
+        self.intents = discord.Intents.default()
+        self.intents.message_content = True
+        
+        # Inisialisasi client dengan konfigurasi yang benar
         super().__init__(
-            intents=intents, 
-            *args, 
-            **kwargs,
-            bot=False  # Parameter bot=False disini
+            intents=self.intents,
+            *args,
+            **kwargs
         )
         self.token = token
 
@@ -79,8 +83,8 @@ async def main():
         return
 
     for token in tokens:
-        client = QuestClaimer(token)
-        asyncio.create_task(client.start(client.token))  # Parameter benar
+        client = QuestClaimer()
+        asyncio.create_task(client.start(token, bot=False))  # Perbaikan parameter
 
     await asyncio.Future()
 
