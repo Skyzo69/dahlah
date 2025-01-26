@@ -1,92 +1,61 @@
-import discord
 import asyncio
-import re
-import os
-from datetime import datetime
+import logging
+from discord.ext import commands
+from discord_components import DiscordComponents, Button
 
-# Config
-CHANNEL_ID = 1324498333758390353  # Ganti dengan ID channel target
+# Konfigurasi Logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
+# Membaca token dari file token.txt
 def load_tokens():
-    """Membaca token dari file token.txt"""
-    tokens = []
-    try:
-        with open('token.txt', 'r') as f:
-            for line in f:
-                token = line.strip()
-                if token and not token.startswith('#'):
-                    tokens.append(token)
-        return tokens
-    except FileNotFoundError:
-        print("[!] File token.txt tidak ditemukan!")
-        exit(1)
+    with open("token.txt", "r") as file:
+        return [line.strip() for line in file]
 
-class QuestClaimer(discord.Client):
-    def __init__(self, token, *args, **kwargs):
-        # Inisialisasi set untuk tracking user
-        self.claimed_users = set()
-        
-        # Setup intents manual
-        self.intents = discord.Intents.default()
-        self.intents.message_content = True
-        
-        # Inisialisasi client dengan konfigurasi yang benar
-        super().__init__(
-            intents=self.intents,
-            *args,
-            **kwargs
-        )
-        self.token = token
-
-    async def on_ready(self):
-        print(f"[+] {self.user} siap!")
-        await self.claim_quests()
-
-    async def claim_quests(self):
-        channel = self.get_channel(CHANNEL_ID)
-        
-        while True:
-            try:
-                async for message in channel.history(limit=50):
-                    if "Quest claimed!" in message.content and message.author.id != self.user.id:
-                        await self.process_quest(message)
-                
-                await asyncio.sleep(2)
-
-            except Exception as e:
-                print(f"[-] Error: {str(e)}")
-                await asyncio.sleep(10)
-
-    async def process_quest(self, message):
-        user_id = message.author.id
-        
-        if user_id in self.claimed_users:
-            return
-
-        if re.search(r"You have been awarded \d+ 🟢", message.content):
-            await message.add_reaction("✅")
-            await asyncio.sleep(2)
-            
-            self.claimed_users.add(user_id)
-            
-            await message.reply(
-                f"Verified! {message.author.mention}",
-                delete_after=5
-            )
-            print(f"[+] Berhasil verifikasi {message.author}")
-
-async def main():
-    tokens = load_tokens()
-    
-    if not tokens:
-        print("[!] Tidak ada token yang valid di token.txt!")
+# Fungsi untuk memverifikasi quest di satu channel
+async def verify_quests(bot, channel_id):
+    channel = bot.get_channel(channel_id)
+    if not channel:
+        logging.error(f"Channel dengan ID {channel_id} tidak ditemukan.")
         return
 
-    for token in tokens:
-        client = QuestClaimer()
-        asyncio.create_task(client.start(token, bot=False))  # Perbaikan parameter
+    try:
+        # Iterasi semua pesan di channel
+        async for message in channel.history(limit=100):
+            # Cek apakah pesan memiliki tombol "Verify"
+            if message.author.bot and message.components:
+                for row in message.components:
+                    for component in row.children:
+                        if isinstance(component, Button) and component.label == "Verify":
+                            try:
+                                await component.click()
+                                logging.info(f"{bot.user} berhasil memverifikasi quest: {message.id}")
+                                await asyncio.sleep(2)  # Jeda 2 detik
+                            except Exception as e:
+                                logging.warning(f"Gagal memverifikasi quest {message.id}: {e}")
+    except Exception as e:
+        logging.error(f"Kesalahan saat membaca history channel: {e}")
 
-    await asyncio.Future()
+# Main function untuk menjalankan beberapa bot/token
+async def run_bots(channel_id):
+    tokens = load_tokens()
+    bots = []
+
+    for token in tokens:
+        bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
+        DiscordComponents(bot)  # Tambahkan dukungan untuk tombol
+        bots.append(bot)
+
+        @bot.event
+        async def on_ready():
+            logging.info(f"{bot.user} berhasil login.")
+            await verify_quests(bot, channel_id)
+            await bot.close()  # Tutup bot setelah tugas selesai
+
+    # Jalankan semua bot secara paralel
+    await asyncio.gather(*[bot.start(token) for bot in tokens])
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # Ganti YOUR_CHANNEL_ID_HERE dengan ID channel Discord Anda
+    CHANNEL_ID = 1324498333758390353
+
+    asyncio.run(run_bots(CHANNEL_ID))
