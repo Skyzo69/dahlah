@@ -22,7 +22,7 @@ def click_verify_button(token, channel_id, message_id, custom_id):
         "type": 3,
         "message_id": message_id,
         "channel_id": channel_id,
-        "application_id": "your_application_id",  # Ganti sesuai kebutuhan
+        "application_id": "1047256251320520705",  # Ganti sesuai kebutuhan
         "data": {
             "component_type": 2,
             "custom_id": custom_id
