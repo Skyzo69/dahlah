@@ -1,6 +1,5 @@
 import httpx
 import asyncio
-import json
 import logging
 
 # Logging
@@ -14,7 +13,7 @@ def load_tokens():
 # Fungsi untuk mendapatkan pesan dari channel
 async def fetch_messages(token, channel_id, limit=100):
     url = f"https://discord.com/api/v10/channels/{channel_id}/messages?limit={limit}"
-    headers = {"Authorization": f"Bot {token}"}
+    headers = {"Authorization": token}  # User token tidak perlu prefix "Bot"
     async with httpx.AsyncClient() as client:
         response = await client.get(url, headers=headers)
         if response.status_code == 200:
@@ -26,9 +25,9 @@ async def fetch_messages(token, channel_id, limit=100):
 # Fungsi untuk mengklik tombol "Verify"
 async def click_button(token, message, button):
     url = f"https://discord.com/api/v10/interactions"
-    headers = {"Authorization": f"Bot {token}", "Content-Type": "application/json"}
+    headers = {"Authorization": token, "Content-Type": "application/json"}
     
-    # Payload untuk interaksi
+    # Payload untuk interaksi tombol
     payload = {
         "type": 3,
         "message_id": message["id"],
@@ -66,6 +65,6 @@ async def main(channel_id):
 
 if __name__ == "__main__":
     # Ganti YOUR_CHANNEL_ID_HERE dengan ID channel Discord tempat quest berada
-    CHANNEL_ID = "1324498333758390353"
+    CHANNEL_ID = "YOUR_CHANNEL_ID_HERE"
 
     asyncio.run(main(CHANNEL_ID))
