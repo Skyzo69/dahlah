@@ -70,7 +70,8 @@ def main():
             
             for component in components:
                 for action in component.get("components", []):
-                    if action["type"] == 2 and action["custom_id"].startswith("claimDrop_"):
+                    # Periksa keberadaan kunci 'custom_id'
+                    if action.get("type") == 2 and action.get("custom_id", "").startswith("claimDrop_"):
                         print(f"[INFO] Found Verify button in message ID: {message_id}")
                         click_verify_button(token, channel_id, message_id, action["custom_id"])
                         time.sleep(2)  # Delay untuk menghindari rate limit
