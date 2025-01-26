@@ -1,7 +1,7 @@
 import asyncio
 import logging
+import discord
 from discord.ext import commands
-from discord_components import DiscordComponents, Button
 
 # Konfigurasi Logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -21,13 +21,13 @@ async def verify_quests(bot, channel_id):
     try:
         # Iterasi semua pesan di channel
         async for message in channel.history(limit=100):
-            # Cek apakah pesan memiliki tombol "Verify"
+            # Cek apakah pesan memiliki komponen tombol
             if message.author.bot and message.components:
                 for row in message.components:
                     for component in row.children:
-                        if isinstance(component, Button) and component.label == "Verify":
+                        if component.label == "Verify":  # Cari tombol "Verify"
                             try:
-                                await component.click()
+                                await message.interaction_response.send_message()  # Klik tombol
                                 logging.info(f"{bot.user} berhasil memverifikasi quest: {message.id}")
                                 await asyncio.sleep(2)  # Jeda 2 detik
                             except Exception as e:
@@ -42,7 +42,6 @@ async def run_bots(channel_id):
 
     for token in tokens:
         bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
-        DiscordComponents(bot)  # Tambahkan dukungan untuk tombol
         bots.append(bot)
 
         @bot.event
@@ -52,7 +51,7 @@ async def run_bots(channel_id):
             await bot.close()  # Tutup bot setelah tugas selesai
 
     # Jalankan semua bot secara paralel
-    await asyncio.gather(*[bot.start(token) for bot in tokens])
+    await asyncio.gather(*[bot.start(token) for token in tokens])
 
 if __name__ == "__main__":
     # Ganti YOUR_CHANNEL_ID_HERE dengan ID channel Discord Anda
